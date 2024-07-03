@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+   
+    <button id="register-passkey-btn" style="display: none;">Register Passkey</button>
+
+    <div class="container">
+        <main class="centralising-wrapper">
+            <a href="/">
+                <img src="/images/asf.png" alt="DivRhino logo" class="site-logo">
+            </a>
+            <h1>Register</h1>
+
+            <section class="auth-form">
+                <form id="register-form">
+                    <label for="username" class="input-label">Username</label>
+                    <span class="input-field">
+                        <input type="text" id="username" name="username" placeholder="Enter your username" required autofocus>
+                    </span>
+                    <label for="password" class="input-label">Password</label>
+                    <span class="input-field">
+                        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    </span>
+                    <input type="submit" value="Register">
+                </form>
+
+                <p class="help">Already have an account? <a href="/login">Sign in</a></p>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+    <script src="/scripts/base64url.js"></script> <!-- Link to base64url.js -->
+    <script src="/scripts/attestation-register.js"></script> <!-- Link to attestation-register.js -->
+    <script>
+        const form = document.getElementById('register-form');
+        const registerPasskeyBtn = document.getElementById('register-passkey-btn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/users/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error);
+                }
+
+                const result = await response.json();
+                const { id } = result;
+                
+                // Trigger passkey registration
+                await registerPasskey(id);
+                
+            } catch (error) {
+                alert('Registration failed: ' + error.message);
+            }
+        });
+
+        async function registerPasskey(userId) {
+            try {
+                const response = await fetch('/auth/register-challenge', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ userId })
+                });
+
+                const challengeResult = await response.json();
+                const { options } = challengeResult; // Server side challenge
+
+                const authenticationResult = await SimpleWebAuthnBrowser.startRegistration(options);
+                console.log(authenticationResult);
+
+                await fetch('/auth/register-verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ userId, cred: authenticationResult })
+                });
+
+                window.location.replace(`/dashboard?userId=${userId}`);
+            } catch (error) {
+                alert('Passkey registration failed: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

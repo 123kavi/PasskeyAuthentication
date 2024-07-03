@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KShop Dashboard</title>
+</head>
+<body>
+    <div class="container-wide">
+        <nav class="site-nav">
+            <h1>KShop Dashboard</h1>
+            <div class="button-group">
+                <a href="/welcome" class="button-link">Logout</a>
+            </div>
+        </nav>
+        <main class="admin-wrapper">
+            <section class="empty-dashboard">
+                <img src="/images/asf.png" alt="" class="empty-logo">
+                <p>Your dashboard is currently empty.</p>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('logout-button').addEventListener('click', async function(e) {
+            e.preventDefault();
+
+            try {
+                const response = await fetch('/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+
+                if (response.ok) {
+                    window.location.href = '/login'; // Redirect to login after logout
+                } else {
+                    alert('Logout failed. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<div class="container">
+    <main class="centralising-wrapper">
+        <a href="/">
+            <img src="/images/asf.png" alt="DivRhino logo" class="site-logo">
+        </a>
+        <h1>Login</h1>
+    
+        <section class="auth-form">
+            <form id="login-form">
+                <label for="username">
+                    <span class="input-label">Username</span>
+                    <span class="input-field">
+                        <input id="username" name="username" type="text" placeholder="Enter your username">
+                    </span>
+                </label>
+                <input type="submit" value="Login">
+            </form>
+    
+            <p class="help">Don't have an account yet? <a href="/register">Register</a></p>
+        </section>
+    </main>
+</div>
+
+<script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+<script>
+     const form = document.getElementById('login-form');
+     const usernameField = document.getElementById('username');
+
+     form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const username = usernameField.value;
+
+        const response = await fetch('/auth/login-challenge', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username })
+        });
+
+        const challengeResult = await response.json();
+        const { options } = challengeResult; // Server side challenge
+
+        const authenticationResult = await SimpleWebAuthnBrowser.startAuthentication(options);
+        console.log(authenticationResult);
+
+        const verifyResponse = await fetch('/auth/login-verify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, cred: authenticationResult })
+        });
+
+        if (verifyResponse.ok) {
+            window.location.href = '/dashboard'; // Redirect to profile page upon successful login
+        } else {
+            alert('Login failed. Please try again.'); // Handle login failure if needed
+        }
+     });
+</script>
+</body>
+</html>
